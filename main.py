@@ -4,13 +4,16 @@ from hashtable import HashTable, DataItem
 from btree import BTree, TreeVisualizer, BucketNode, TreeItem
 from math import floor
 
-def bubble_sort(myList : list, sortBy : Callable): # tried this and forgot the performance is abysmal
-    n = len(myList)
-    # Traverse through all array elements
-    for i in range(n):
-        for j in range(0, n - i - 1):
-            if sortBy(myList[j]) > sortBy(myList[j + 1]):
-                myList[j], myList[j + 1] = myList[j + 1], myList[j]
+def quick_sort(myList : list, sortFunc : Callable):
+    if len(myList) <= 1:
+        return myList
+    
+    pivot = myList[0] # simple pivot selection for now
+    
+    left = [item for item in myList[1:] if sortFunc(item) < sortFunc(pivot)]
+    right = [item for item in myList[1:] if sortFunc(item) >= sortFunc(pivot)]
+    
+    return quick_sort(left, sortFunc) + [pivot] + quick_sort(right, sortFunc)
 
 def index_column(col : list, sortBy) -> BTree:
     # troy's idea: make internal bucket add function that just doesn't search through the list
@@ -28,8 +31,7 @@ def index_column(col : list, sortBy) -> BTree:
         sortKeyFunc = lambda x: int(x.durationMins)
     else:
         return -1
-
-    bubble_sort(col, sortKeyFunc)
+    col = quick_sort(col, sortKeyFunc)
     tree = BTree(3) # md 3, 10 data for testing tree stucture
     tree.root = BucketNode(tree.maxdegree)
     curBucket : BucketNode = tree.root
