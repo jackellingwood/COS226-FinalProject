@@ -75,7 +75,7 @@ def main():
     hashTables : dict[str, HashTable] = dict()
     hashTables["title"] = HashTable(20000, DataType.movieName)
     hashTables["quote"] = HashTable(20000, DataType.quote)
-    indexibleColumns = ["release_date", "box_office_revenue", "rating", "duration_minutes"]
+    indexableColumns = ["release_date", "box_office_revenue", "rating", "duration_minutes"]
     
     titleRow = dataFile[0]
     dataList : list[DataItem] = []
@@ -89,6 +89,7 @@ def main():
     print("Dataset loaded, which option would you like to perform?")
     attempt = ""
     while not attempt == "quit":
+        print() # to allow extra space in output
         print("Options: [index, search, range, quit]")
         if (indexedColumns.keys()):
             print(f"Indexed Columns: {', '.join(indexedColumns.keys())}")
@@ -96,15 +97,15 @@ def main():
         match attempt:
             case "index":
                 print("Index which column?")
-                print(f"[{', '.join(titleRow)}]")
+                print(f"[{', '.join(indexableColumns)}]")
                 indexAttempt = input("> ")
-                if indexAttempt not in indexibleColumns:
+                if indexAttempt not in indexableColumns:
                     print("Invalid column.")
                     continue
                 else:
                     indexedColumn = index_column(dataList, indexAttempt)
                     if (indexedColumn == -1):
-                        print(f"Column {indexAttempt} is not indexible.")
+                        print(f"Column {indexAttempt} is not indexable.")
                         continue
                     else:
                         indexedColumns[indexAttempt] = indexedColumn

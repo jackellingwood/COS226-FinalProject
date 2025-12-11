@@ -59,41 +59,36 @@ class HashTable(): #TODO linked list instead, linear probing is a nightmare
         self.table: list[LinkedNode] = [None] * length
         self.collisions = 0
 
-    # store value at its hash or next available spot in linear probed list, can hash by either quote or title depending on self.indexBy
+    # adds a value to our hashTable, hashes by indexBy given at __init__
     def store(self, value: DataItem):
+        # to allow sorting by different data types
         if self.indexBy == DataType.movieName:
             key = self._hash(value.movieName)
         elif self.indexBy == DataType.quote:
             key = self._hash(value.quote)
 
-        if self.table[key] != None:
+        # linkedNode approach, create linkedNode if one doesn't exist in slot or append to end of list
+        if self.table[key] == None:
+            self.table[key] = LinkedNode(value)
+        else:
             self.collisions += 1
-        
-        originalKey = key
-        while self.table[key]: # loops through filled slots
-            key += 1
-            if key == self.length: # wrap key around if necessary
-                key = 0
-            if key == originalKey: # traversed whole list
-                return "No more space, cannot store new value."
 
-        self.table[key] = value
+            # hopefully this makes it so that we do not have to traverse an entire linked list to find our last value
+            curNode = self.table[key]
+            curNode.last.next = LinkedNode(value)
+            curNode.last = curNode.last.next
 
     def retrieve(self, strKey: str) -> DataItem:
         key = self._hash(strKey)
-        originalKey = key
-        while self.table[key]: # loops through filled slots 
+        curNode = self.table[key]
+        while curNode:
             if self.indexBy == DataType.movieName:
-                if self.table[key].movieName == strKey:
-                    return self.table[key] # found it!
+                if curNode.data.movieName == strKey:
+                    return self.table[key].data # found it!
             elif self.indexBy == DataType.quote:
-                if self.table[key].quote == strKey:
-                    return self.table[key] # found it!
-            key += 1
-            if key == self.length: # wrap key around if necessary
-                key = 0
-            if key == originalKey: # traversed whole list
-                return None
+                if curNode.data.quote == strKey:
+                    return self.table[key].data # found it!
+            curNode = curNode.next
             
         return None # met with a None, the item is not here
 
