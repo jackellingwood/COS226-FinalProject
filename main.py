@@ -1,7 +1,7 @@
 from csv import reader
 from typing import Callable
-from hashtable import HashTable, DataItem
-from btree import BTree, TreeVisualizer, BucketNode, TreeItem
+from hashtable import HashTable, DataItem, DataType
+from btree import BTree, BucketNode, TreeItem # TreeVisualizer
 from math import floor
 
 def quick_sort(myList : list, sortFunc : Callable):
@@ -70,51 +70,72 @@ def main():
                 dataFile = list(reader(f))
         except FileNotFoundError:
             print("File", path, "not found.")
+
+    
+    hashTables : dict[str, HashTable] = dict()
+    hashTables["title"] = HashTable(20000, DataType.movieName)
+    hashTables["quote"] = HashTable(20000, DataType.quote)
+    indexibleColumns = ["release_date", "box_office_revenue", "rating", "duration_minutes"]
     
     titleRow = dataFile[0]
     dataList : list[DataItem] = []
     for row in dataFile[1:]:
         dataList.append(DataItem(row))
+        hashTables["title"].store(DataItem(row))
+        hashTables["quote"].store(DataItem(row))
 
     indexedColumns = dict()
 
-    # print("Dataset loaded, which option would you like to perform?")
-    # attempt = ""
-    # while not attempt == "quit":
-    #     print("Options: [index, search, range, quit]")
-    #     if (indexedColumns.keys()):
-    #         print(f"Indexed Columns: {', '.join(indexedColumns.keys())}")
-    #     attempt = input("> ")
-    #     match attempt:
-    #         case "index":
-    #             print("Index which column?")
-    #             print(f"[{', '.join(titleRow)}]")
-    #             indexAttempt = input("> ")
-    #             if indexAttempt not in titleRow:
-    #                 print("Invalid column.")
-    #                 continue
-    #             else:
-    #                 indexedColumn = index_column(dataList, indexAttempt)
-    #                 if (indexedColumn == -1):
-    #                     print(f"Column {indexAttempt} is not indexible.")
-    #                     continue
-    #                 else:
-    #                     indexedColumns[indexAttempt] = indexedColumn
-    #         case "search":
-    #             print("Search not implemented.")
-    #         case "range":
-    #             print("Range not implemented.")
-    #         case "quit":
-    #             continue
-    #         case _:
-    #             print(f"I don't understand {attempt}.")
+    print("Dataset loaded, which option would you like to perform?")
+    attempt = ""
+    while not attempt == "quit":
+        print("Options: [index, search, range, quit]")
+        if (indexedColumns.keys()):
+            print(f"Indexed Columns: {', '.join(indexedColumns.keys())}")
+        attempt = input("> ")
+        match attempt:
+            case "index":
+                print("Index which column?")
+                print(f"[{', '.join(titleRow)}]")
+                indexAttempt = input("> ")
+                if indexAttempt not in indexibleColumns:
+                    print("Invalid column.")
+                    continue
+                else:
+                    indexedColumn = index_column(dataList, indexAttempt)
+                    if (indexedColumn == -1):
+                        print(f"Column {indexAttempt} is not indexible.")
+                        continue
+                    else:
+                        indexedColumns[indexAttempt] = indexedColumn
+            case "search":
+                print("Search which column?")
+                print(f"[{', '.join(hashTables.keys())}]")
+                searchAttempt = input("> ")
+                if searchAttempt not in hashTables.keys():
+                    print("Invalid column.")
+                    continue
+                else:
+                    print(f"Find movie with what {searchAttempt}?")
+                    itemQuery = input("> ")
+                    searchedItem = hashTables[searchAttempt].retrieve(itemQuery)
+                    if not searchedItem:
+                        print(f"Could not find movie with {searchAttempt} {itemQuery}.")
+                        continue
+                    searchedItem.printInfo()
+            case "range":
+                print("Range not implemented.")
+            case "quit":
+                continue
+            case _:
+                print(f"I don't understand '{attempt}'.")
 
 
-    tree = index_column(dataList[:10], "rating")
-    print(tree.search(8.0))
-    visualizer = TreeVisualizer()
-    visualizer.add_to_stack(tree)
-    visualizer.visualize()
+    # tree = index_column(dataList[:10], "rating")
+    # print(tree.range_search(8.0, 8.0))
+    # visualizer = TreeVisualizer()
+    # visualizer.add_to_stack(tree)
+    # visualizer.visualize()
 
 
 if __name__ == "__main__":

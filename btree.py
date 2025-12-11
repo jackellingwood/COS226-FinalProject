@@ -360,6 +360,47 @@ class BTree(Tree):
                 return bucketItem
         print(f"Search: {key} not found.")
         return
+    
+    def range_search(self, lower : float, upper : float):
+        out = []
+        curBucket = self.root
+        while not curBucket.is_leaf: # search down the tree for the right bucket
+            targetLink = 0
+            for bucketKey in curBucket.keys:
+                if lower < bucketKey:
+                    break
+                if lower == bucketKey: # for case with duplicates, check the bucket after lower bucket
+                    targetLink += 1
+                    break
+                targetLink += 1
+            curBucket = curBucket.links[targetLink]
+        print(curBucket)
+        targetItemIndex = 0
+        for bucketItem in curBucket.keys: #search bucket for correct starting point
+            if lower <= bucketItem.key:
+                break
+            targetItemIndex += 1
+        if targetItemIndex >= len(curBucket.keys): # kind of like a do while here, check that if the for loop search has placed us in the next bucket
+            if not curBucket.next:
+                return []
+            curBucket = curBucket.next
+            targetItemIndex = 0
+        print(curBucket)
+        while curBucket.keys[targetItemIndex].key <= upper: # iterate through leaves until we have a full list.
+            print(curBucket.keys[targetItemIndex].key)
+            out.append(curBucket.keys[targetItemIndex])
+            targetItemIndex += 1
+            if targetItemIndex >= len(curBucket.keys):
+                if not curBucket.next:
+                    break
+                curBucket = curBucket.next
+                targetItemIndex = 0
+
+        return out
+
+
+        
+        
 
     # returns whether a node can be stolen from (exists and has enough keys)
     def is_valid_steal(self, node):

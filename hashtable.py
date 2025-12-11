@@ -32,6 +32,18 @@ class DataItem:
         self.productionCompany = line[7]
         self.quote = line[8]
 
+    def printInfo(self):
+        print("Title: ", self.movieName)
+        print("Genre: ", self.genre)
+        print("Release Date: ", self.releaseDate)
+        print("Director: ", self.director)
+        print("Revenue: ", self.revenue)
+        print("Rating: ", self.rating)
+        print("Duration (Mins): ", self.durationMins)
+        print("Production Company: ", self.productionCompany)
+        print("Quote: ", self.quote)
+
+
 
 class LinkedNode:
     def __init__(self, data: DataItem):
@@ -40,50 +52,50 @@ class LinkedNode:
         self.last: LinkedNode = self
 
 
-class HashTable():
+class HashTable(): #TODO linked list instead, linear probing is a nightmare
     def __init__(self, length: int, indexBy: DataType = DataType.movieName):
         self.length = length
         self.indexBy = indexBy
         self.table: list[LinkedNode] = [None] * length
         self.collisions = 0
 
-    # adds a value to our hashTable, hashes by indexBy given at __init__
+    # store value at its hash or next available spot in linear probed list, can hash by either quote or title depending on self.indexBy
     def store(self, value: DataItem):
-        # to allow sorting by different data types
         if self.indexBy == DataType.movieName:
             key = self._hash(value.movieName)
         elif self.indexBy == DataType.quote:
             key = self._hash(value.quote)
 
-        # linkedNode approach, create linkedNode if one doesn't exist in slot or append to end of list
-        if self.table[key] == None:
-            self.table[key] = LinkedNode(value)
-        else:
+        if self.table[key] != None:
             self.collisions += 1
+        
+        originalKey = key
+        while self.table[key]: # loops through filled slots
+            key += 1
+            if key == self.length: # wrap key around if necessary
+                key = 0
+            if key == originalKey: # traversed whole list
+                return "No more space, cannot store new value."
 
-            # hopefully this makes it so that we do not have to traverse an entire linked list to find our last value
-            curNode = self.table[key]
-            curNode.last.next = LinkedNode(value)
-            curNode.last = curNode.last.next
+        self.table[key] = value
 
-
-    # def retrieve(self, strKey: str) -> DataItem: #retrieval not required
-    #     key = self._hash(strKey)
-    #     originalKey = key
-    #     while self.table[key]: # loops through filled slots 
-    #         if self.indexBy == DataType.movieName:
-    #             if self.table[key].movieName == strKey:
-    #                 return self.table[key] # found it!
-    #         elif self.indexBy == DataType.quote:
-    #             if self.table[key].quote == strKey:
-    #                 return self.table[key] # found it!
-    #         key += 1
-    #         if key == self.length: # wrap key around if necessary
-    #             key = 0
-    #         if key == originalKey: # traversed whole list
-    #             return None
+    def retrieve(self, strKey: str) -> DataItem:
+        key = self._hash(strKey)
+        originalKey = key
+        while self.table[key]: # loops through filled slots 
+            if self.indexBy == DataType.movieName:
+                if self.table[key].movieName == strKey:
+                    return self.table[key] # found it!
+            elif self.indexBy == DataType.quote:
+                if self.table[key].quote == strKey:
+                    return self.table[key] # found it!
+            key += 1
+            if key == self.length: # wrap key around if necessary
+                key = 0
+            if key == originalKey: # traversed whole list
+                return None
             
-    #     return None # met with a None, the item is not here
+        return None # met with a None, the item is not here
 
     def _hash(self, data): # djb2 hash, from http://www.cse.yorku.ca/~oz/hash.html
         key = 5381
