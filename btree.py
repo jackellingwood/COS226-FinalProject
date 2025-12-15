@@ -361,7 +361,7 @@ class BTree(Tree):
         print(f"Search: {key} not found.")
         return
     
-    def range_search(self, lower : float, upper : float):
+    def range_search(self, lower : float, upper : float) -> list[TreeItem]:
         out = []
         curBucket = self.root
         while not curBucket.is_leaf: # search down the tree for the right bucket
@@ -374,7 +374,6 @@ class BTree(Tree):
                     break
                 targetLink += 1
             curBucket = curBucket.links[targetLink]
-        print(curBucket)
         targetItemIndex = 0
         for bucketItem in curBucket.keys: #search bucket for correct starting point
             if lower <= bucketItem.key:
@@ -385,9 +384,7 @@ class BTree(Tree):
                 return []
             curBucket = curBucket.next
             targetItemIndex = 0
-        print(curBucket)
         while curBucket.keys[targetItemIndex].key <= upper: # iterate through leaves until we have a full list.
-            print(curBucket.keys[targetItemIndex].key)
             out.append(curBucket.keys[targetItemIndex])
             targetItemIndex += 1
             if targetItemIndex >= len(curBucket.keys):

@@ -1,7 +1,7 @@
 from csv import reader
 from typing import Callable
 from hashtable import HashTable, DataItem, DataType
-from btree import BTree, BucketNode, TreeItem # TreeVisualizer
+from btree import BTree, BucketNode, TreeItem, TreeVisualizer
 from math import floor
 
 def quick_sort(myList : list, sortFunc : Callable):
@@ -32,7 +32,7 @@ def index_column(col : list, sortBy) -> BTree:
     else:
         return -1
     col = quick_sort(col, sortKeyFunc)
-    tree = BTree(3) # md 3, 10 data for testing tree stucture
+    tree = BTree(100) # md 3, 10 data for testing tree stucture
     tree.root = BucketNode(tree.maxdegree)
     curBucket : BucketNode = tree.root
     for item in col: # make sure every item is used
@@ -84,7 +84,7 @@ def main():
         hashTables["title"].store(DataItem(row))
         hashTables["quote"].store(DataItem(row))
 
-    indexedColumns = dict()
+    indexedColumns : dict[str, BTree] = dict()
 
     print("Dataset loaded, which option would you like to perform?")
     attempt = ""
@@ -92,7 +92,7 @@ def main():
         print() # to allow extra space in output
         print("Options: [index, search, range, quit]")
         if (indexedColumns.keys()):
-            print(f"Indexed Columns: {', '.join(indexedColumns.keys())}")
+            print(f"Indexed Columns: [{', '.join(indexedColumns.keys())}]")
         attempt = input("> ")
         match attempt:
             case "index":
@@ -125,7 +125,50 @@ def main():
                         continue
                     searchedItem.printInfo()
             case "range":
-                print("Range not implemented.")
+                if len(indexedColumns) == 0:
+                    print("No columns indexed, use \"index\".")
+                    continue
+                print("Range search which column?")
+                print(f"[{', '.join(indexedColumns)}]")
+                rangeAttempt = input("> ")
+                if rangeAttempt not in indexedColumns:
+                    print("Column not indexed, use \"index\".")
+                    continue
+                else:
+                    try:
+                        print(f"Lower Bound?")
+                        lb = float(input("> "))
+                        print(f"Upper Bound?")
+                        ub = float(input("> "))
+                    except ValueError:
+                        print("Bound should be a number.")
+                        continue
+                    rangeResult = indexedColumns[rangeAttempt].range_search(lb, ub)
+                    if len(rangeResult) == 0:
+                        print(f"No items found between {rangeAttempt} ({lb} - {ub}).")
+                        continue
+                    print(f"Found {len(rangeResult)} items between {rangeAttempt} ({lb} - {ub}).")
+                    print("What to do with the results?")
+                    print("[print, delete, save]")
+                    saveAttempt = input("> ")
+                    match saveAttempt:
+                        case "print":
+                            for item in rangeResult:
+                                item.value.printInfo()
+                                print()
+                        case "delete":
+                            # TODO must do for all btrees and all hashes
+                            for item in rangeResult:
+                                for column in indexedColumns.keys(): # will not work, item.key is specific to its b tree
+                                    indexedColumns[column].remove(item.key)
+                                hashTables["title"].remove(item.value.movieName)
+                                hashTables["quote"].remove(item.value.quote)
+                        case "save":
+                            print("Save not implemented.")
+                        case _:
+                            print(f"I don't understand '{attempt}'.")
+                            continue
+
             case "quit":
                 continue
             case _:
@@ -133,7 +176,7 @@ def main():
 
 
     # tree = index_column(dataList[:10], "rating")
-    # print(tree.range_search(8.0, 8.0))
+    # print([x.value.movieName for x in tree.range_search(8.0, 8.0)])
     # visualizer = TreeVisualizer()
     # visualizer.add_to_stack(tree)
     # visualizer.visualize()

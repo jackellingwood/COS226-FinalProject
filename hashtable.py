@@ -91,6 +91,30 @@ class HashTable(): #TODO linked list instead, linear probing is a nightmare
             curNode = curNode.next
             
         return None # met with a None, the item is not here
+    
+    def remove(self, strKey: str):
+        key = self._hash(strKey)
+        curNode = self.table[key]
+        lastNode = curNode
+        # base case, curNode is the data we want (must change head)
+        if self.indexBy == DataType.movieName:
+            if curNode.data.movieName == strKey:
+                self.table[key] = curNode.next # found it!
+        elif self.indexBy == DataType.quote:
+            if curNode.data.quote == strKey:
+                self.table[key] = curNode.next # found it!
+        # recursive case
+        while curNode:
+            if self.indexBy == DataType.movieName:
+                if curNode.data.movieName == strKey:
+                    lastNode.next = curNode.next # found it!
+            elif self.indexBy == DataType.quote:
+                if curNode.data.quote == strKey:
+                    lastNode.next = curNode.next # found it!
+            lastNode = curNode
+            curNode = curNode.next
+            
+        return None # met with a None, the item is not here
 
     def _hash(self, data): # djb2 hash, from http://www.cse.yorku.ca/~oz/hash.html
         key = 5381
