@@ -1,3 +1,8 @@
+# Author: Troy Schotter
+# Date: 12/19/2025
+# Program: btree_visualizer.py
+# Project: COS226 Final Project
+
 import turtle
 import math
 import copy

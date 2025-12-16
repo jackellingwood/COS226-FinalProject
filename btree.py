@@ -1,7 +1,7 @@
 # Author: Jack Ellingwood
-# Date: 11/4
+# Date: 12/19/2025
 # Program: btree.py
-# Assignment: Final Project
+# Project: COS226 Final Project
 
 from btree_visualizer import Tree, TreeVisualizer, Bucket, TreeItem
 
@@ -406,33 +406,3 @@ class BTree(Tree):
         if (len(node.keys) <= (self.maxdegree-1)//2):
             return False
         return True
-
-# def main():
-#     print("B+ Tree Example")
-
-#     maxdegree = 5
-
-#     # create a tree with a max degree of 5
-#     tree = BTree(maxdegree)
-
-#     # run all add calls according to file
-#     with open("data.txt", "r") as f:
-#         for i, dataToAdd in enumerate(f.readlines()):
-#             dataToAdd = dataToAdd.split(',')
-#             tree.add(int(dataToAdd[0]), dataToAdd[1].strip())
-#             if (i + 1) % 10 == 0: 
-#                 treevisualizer.add_to_stack(tree)
-
-#     print(tree.search(75))
-#     print(tree.search(99))
-
-#     with open("remove_data.txt", "r") as f:
-#         for i, dataToRemove in enumerate(f.readlines()):
-#             print(tree.remove(int(dataToRemove)))
-#             if (i + 1) % 6 == 0: 
-#                 treevisualizer.add_to_stack(tree)
-
-#     treevisualizer.visualize()
-
-# if __name__ == "__main__":
-#     main()

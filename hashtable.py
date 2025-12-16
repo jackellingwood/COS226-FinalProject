@@ -1,6 +1,7 @@
 # Author: Jack Ellingwood
-# Date: 11/18/25
-# Assignment: COS226 HW 5: Hash Something Out 
+# Date: 12/19/2025
+# Program: hashtable.py
+# Project: COS226 Final Project
 
 from csv import reader
 from enum import Enum
@@ -32,7 +33,7 @@ class DataItem:
         self.productionCompany = line[7]
         self.quote = line[8]
 
-    def printInfo(self):
+    def printInfo(self): # prints attributes
         print("Title: ", self.movieName)
         print("Genre: ", self.genre)
         print("Release Date: ", self.releaseDate)
@@ -43,6 +44,19 @@ class DataItem:
         print("Production Company: ", self.productionCompany)
         print("Quote: ", self.quote)
 
+    def info(self) -> list: # returns attributes as list
+        return [
+            self.movieName,
+            self.genre,
+            self.releaseDate,
+            self.director,
+            self.revenue,
+            self.rating,
+            self.durationMins,
+            self.productionCompany,
+            self.quote
+        ]
+
 
 
 class LinkedNode:
@@ -52,7 +66,7 @@ class LinkedNode:
         self.last: LinkedNode = self
 
 
-class HashTable(): #TODO linked list instead, linear probing is a nightmare
+class HashTable():
     def __init__(self, length: int, indexBy: DataType = DataType.movieName):
         self.length = length
         self.indexBy = indexBy
@@ -78,24 +92,29 @@ class HashTable(): #TODO linked list instead, linear probing is a nightmare
             curNode.last.next = LinkedNode(value)
             curNode.last = curNode.last.next
 
+    # return a dataItem, attempted to find in linked list at key
     def retrieve(self, strKey: str) -> DataItem:
         key = self._hash(strKey)
         curNode = self.table[key]
         while curNode:
             if self.indexBy == DataType.movieName:
                 if curNode.data.movieName == strKey:
-                    return self.table[key].data # found it!
+                    return curNode.data # found it!
             elif self.indexBy == DataType.quote:
                 if curNode.data.quote == strKey:
-                    return self.table[key].data # found it!
+                    return curNode.data # found it!
             curNode = curNode.next
             
         return None # met with a None, the item is not here
     
+    # same as retrieve except for extra logic that removes a node from the linked list if found.
     def remove(self, strKey: str):
         key = self._hash(strKey)
         curNode = self.table[key]
         lastNode = curNode
+        if not curNode:
+            print("Hash Table Error: Tried to remove value from nonexistent list.")
+            return None
         # base case, curNode is the data we want (must change head)
         if self.indexBy == DataType.movieName:
             if curNode.data.movieName == strKey:
@@ -127,41 +146,3 @@ class HashTable(): #TODO linked list instead, linear probing is a nightmare
     
     def get_empty_slots(self):
         return self.table.count(None)
-
-
-# def main():
-#     print()
-
-#     titleTable = HashTable(15000, DataType.movieName)
-#     start = end = 0
-#     with open("MOCK_DATA.csv", encoding="UTF-8") as f:
-#         start = time.time_ns()
-#         for row in list(reader(f))[1:]: # skip initial variables line
-#             titleTable.store(DataItem(row))
-#         end = time.time_ns() - start
-
-#     print("Optimization 5, Title")
-#     print("Time taken (s):", end / 10**9)
-#     print("Collisions:", titleTable.collisions)
-#     print("Wasted slots:", titleTable.get_empty_slots(), "/", titleTable.length)
-
-#     print()
-
-#     quoteTable = HashTable(15000, DataType.quote)
-#     start = end = 0
-#     with open("MOCK_DATA.csv", encoding="UTF-8") as f:
-#         start = time.time_ns()
-#         for row in list(reader(f))[1:]: # skip initial variables line
-#             quoteTable.store(DataItem(row))
-#         end = time.time_ns() - start
-
-#     print("Optimization 5, Quote")
-#     print("Time taken (s):", end / 10**9)
-#     print("Collisions:", quoteTable.collisions)
-#     print("Wasted slots:", quoteTable.get_empty_slots(), "/", quoteTable.length)
-
-#     print()    
-
-
-# if __name__ == "__main__":
-#     main()
