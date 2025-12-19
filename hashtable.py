@@ -8,6 +8,7 @@ from enum import Enum
 import sys
 import time
 
+# contains all relevant hashTable functions and classes, as well as DataItem which is used as the value for a TreeItem
 
 class DataType(Enum): # datatype enum as comparison by string seemed to slow down the store function
     movieName = 0
@@ -56,6 +57,21 @@ class DataItem:
             self.productionCompany,
             self.quote
         ]
+    
+    def __eq__(self, other):
+        if not isinstance(other, DataItem):
+            return False
+        return (
+            self.movieName == other.movieName and
+            self.genre == other.genre and
+            self.releaseDate == other.releaseDate and
+            self.director == other.director and
+            self.revenue == other.revenue and
+            self.rating == other.rating and
+            self.durationMins == other.durationMins and
+            self.productionCompany == other.productionCompany and
+            self.quote == other.quote
+        )
 
 
 
@@ -80,6 +96,8 @@ class HashTable():
             key = self._hash(value.movieName)
         elif self.indexBy == DataType.quote:
             key = self._hash(value.quote)
+        elif self.indexBy == DataType.director:
+            key = self._hash(value.director)
 
         # linkedNode approach, create linkedNode if one doesn't exist in slot or append to end of list
         if self.table[key] == None:
@@ -92,29 +110,32 @@ class HashTable():
             curNode.last.next = LinkedNode(value)
             curNode.last = curNode.last.next
 
-    # return a dataItem, attempted to find in linked list at key
-    def retrieve(self, strKey: str) -> DataItem:
+    # return matching DataItems, attempt to find in linked list at key
+    def retrieve(self, strKey: str) -> list[DataItem]:
         key = self._hash(strKey)
         curNode = self.table[key]
+        out = []
         while curNode:
             if self.indexBy == DataType.movieName:
                 if curNode.data.movieName == strKey:
-                    return curNode.data # found it!
+                    out.append(curNode.data) # found it!
             elif self.indexBy == DataType.quote:
                 if curNode.data.quote == strKey:
-                    return curNode.data # found it!
+                    out.append(curNode.data) # found it!
+            elif self.indexBy == DataType.director:
+                if curNode.data.director == strKey:
+                    out.append(curNode.data) # found it!
             curNode = curNode.next
             
-        return None # met with a None, the item is not here
+        return out or None # met with a None, the item is not here (return None instead of empty list)
     
-    # same as retrieve except for extra logic that removes a node from the linked list if found.
+    # similar to retrieve except for extra logic that removes a node from the linked list if found. must be called inividually for all elements
     def remove(self, strKey: str):
         key = self._hash(strKey)
         curNode = self.table[key]
         lastNode = curNode
         if not curNode:
-            print("Hash Table Error: Tried to remove value from nonexistent list.")
-            return None
+            return None # item is not here
         # base case, curNode is the data we want (must change head)
         if self.indexBy == DataType.movieName:
             if curNode.data.movieName == strKey:
@@ -122,6 +143,10 @@ class HashTable():
         elif self.indexBy == DataType.quote:
             if curNode.data.quote == strKey:
                 self.table[key] = curNode.next # found it!
+        elif self.indexBy == DataType.director:
+            if curNode.data.director == strKey:
+                self.table[key] = curNode.next # found it!
+        curNode = curNode.next
         # recursive case
         while curNode:
             if self.indexBy == DataType.movieName:
@@ -129,6 +154,9 @@ class HashTable():
                     lastNode.next = curNode.next # found it!
             elif self.indexBy == DataType.quote:
                 if curNode.data.quote == strKey:
+                    lastNode.next = curNode.next # found it!
+            elif self.indexBy == DataType.director:
+                if curNode.data.director == strKey:
                     lastNode.next = curNode.next # found it!
             lastNode = curNode
             curNode = curNode.next

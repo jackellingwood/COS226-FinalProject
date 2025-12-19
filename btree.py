@@ -3,9 +3,9 @@
 # Program: btree.py
 # Project: COS226 Final Project
 
-from btree_visualizer import Tree, TreeVisualizer, Bucket, TreeItem
+# Contains the rest of the functions and classes for making Trees out of TreeItems containg DataItems and performing operations on said Trees.
 
-treevisualizer = TreeVisualizer()
+from btree_visualizer import Tree, Bucket, TreeItem
 
 class BucketNode(Bucket):
 

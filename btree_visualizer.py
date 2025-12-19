@@ -7,6 +7,7 @@ import turtle
 import math
 import copy
 
+# just exists to give TreeItem, Bucket, and Tree classes
 
 class TreeItem:
     def __init__(self, key, value):
@@ -61,6 +62,7 @@ class Tree:
     def __init__(self, maxdegree):
         self.root = None # reference to the root node
         self.maxdegree = maxdegree # the number of keys that will cause a split
+        self.sortKeyFunc = None
 
     def add(self, key, value):
         pass

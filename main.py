@@ -3,17 +3,19 @@
 # Program: main.py
 # Project: COS226 Final Project
 
+# main.py contains main interface loop and index_column function for B+ tree creation (and quick_sort as a helper)
+
 from csv import reader, writer
 from typing import Callable
 from hashtable import HashTable, DataItem, DataType
-from btree import BTree, BucketNode, TreeItem, TreeVisualizer
+from btree import BTree, BucketNode, TreeItem
 from math import floor
 
 def quick_sort(myList : list, sortFunc : Callable): # recursive, sorts myList by attribute defined by sortFunc
     if len(myList) <= 1:
         return myList
     
-    pivot = myList[0] # simple pivot selection for now
+    pivot = myList[0] # simple pivot selection, still works incredibly fast
     
     left = [item for item in myList[1:] if sortFunc(item) < sortFunc(pivot)]
     right = [item for item in myList[1:] if sortFunc(item) >= sortFunc(pivot)]
@@ -34,7 +36,9 @@ def index_column(col : list, sortBy) -> BTree: # creates a btree for a column, s
         tree.sortKeyFunc = lambda x: int(x.durationMins)
     else:
         return -1
+
     col = quick_sort(col, tree.sortKeyFunc)
+
     # tree setup
     tree.root = BucketNode(tree.maxdegree)
     curBucket : BucketNode = tree.root
@@ -73,7 +77,7 @@ def index_column(col : list, sortBy) -> BTree: # creates a btree for a column, s
 
 def main(): # takes care of the user interface, calling other function when necessary
 
-    # load data file and handle errors
+    # load data file from user input filename and handle errors
     dataFile = None
     while dataFile == None:
         try:
@@ -84,10 +88,11 @@ def main(): # takes care of the user interface, calling other function when nece
         except FileNotFoundError:
             print("File", path, "not found.")
 
-    # set up hashTable dict and other data that can be pulled
+    # set up hashTable dict and other data that can be pulled by our main loop
     hashTables : dict[str, HashTable] = dict()
     hashTables["title"] = HashTable(20000, DataType.movieName)
     hashTables["quote"] = HashTable(20000, DataType.quote)
+    hashTables["director"] = HashTable(20000, DataType.director)
     indexableColumns = ["release_date", "box_office_revenue", "rating", "duration_minutes"]
     titleRow = dataFile[0]
     dataList : list[DataItem] = []
@@ -95,6 +100,7 @@ def main(): # takes care of the user interface, calling other function when nece
         dataList.append(DataItem(row))
         hashTables["title"].store(DataItem(row))
         hashTables["quote"].store(DataItem(row))
+        hashTables["director"].store(DataItem(row))
     indexedColumns : dict[str, BTree] = dict()
 
     # User Interface loop
@@ -102,7 +108,7 @@ def main(): # takes care of the user interface, calling other function when nece
     attempt = ""
     while not attempt == "quit":
         print() # to allow extra space in output
-        print("Options: [index, search, range, debug, quit]")
+        print("Options: [index, search, range, quit]")
         if (indexedColumns.keys()): # print indexed columns so that the user is aware
             print(f"Indexed Columns: [{', '.join(indexedColumns.keys())}]")
         attempt = input("> ")
@@ -112,8 +118,11 @@ def main(): # takes care of the user interface, calling other function when nece
                 print("Index which column?")
                 print(f"[{', '.join(indexableColumns)}]")
                 indexAttempt = input("> ")
-                if indexAttempt not in indexableColumns:
+                if indexAttempt not in indexableColumns: # can't index this column
                     print("Invalid column.")
+                    continue
+                elif indexAttempt in indexedColumns: # column already indexed
+                    print("Column already indexed.")
                     continue
                 else:
                     indexedColumn = index_column(dataList, indexAttempt)
@@ -121,34 +130,46 @@ def main(): # takes care of the user interface, calling other function when nece
                         print(f"Column {indexAttempt} is not indexable.")
                         continue
                     else:
-                        indexedColumns[indexAttempt] = indexedColumn
+                        indexedColumns[indexAttempt] = indexedColumn # add column to dict holding our trees
 
             case "search": # search hash table for single value
                 print("Search which column?")
                 print(f"[{', '.join(hashTables.keys())}]")
                 searchAttempt = input("> ")
-                if searchAttempt not in hashTables.keys():
+                if searchAttempt not in hashTables.keys(): # column cannot be exact searched
                     print("Invalid column.")
                     continue
                 else:
-                    print(f"Find movie with what {searchAttempt}?")
+                    print(f"Find movie(s) with what {searchAttempt}?")
                     itemQuery = input("> ")
-                    searchedItem = hashTables[searchAttempt].retrieve(itemQuery)
-                    if not searchedItem:
-                        print(f"Could not find movie with {searchAttempt} \"{itemQuery}\".")
+                    exactResult = hashTables[searchAttempt].retrieve(itemQuery)
+                    if not exactResult: # cannot find movies matching query
+                        print(f"Could not find movie(s) with {searchAttempt} \"{itemQuery}\".")
                         continue
-                    print(f"Found movie with {searchAttempt} \"{itemQuery}\".")
+                    # ask the user what to do with results
+                    print(f"Found {len(exactResult)} movie(s) with {searchAttempt} \"{itemQuery}\".")
                     print("What to do with the results?")
                     print("[print, delete, save]")
                     saveAttempt = input("> ")
                     match saveAttempt:
-                        case "print": # print searched item
-                            searchedItem.printInfo()
-                        case "delete": # delete searched item
-                            for column in indexedColumns.keys():
-                                print(indexedColumns[column].remove(indexedColumns[column].sortKeyFunc(searchedItem.value)))
-                            hashTables["title"].remove(searchedItem.value.movieName)
-                            hashTables["quote"].remove(searchedItem.value.quote)
+                        case "print": # print searched items
+                            for item in exactResult:
+                                item.printInfo()
+                                print() # extra line to space things out
+                        case "delete": # delete searched items
+                            for item in exactResult:
+                                for column in indexedColumns.keys(): # remove from b+ trees
+                                    indexedColumns[column].remove(indexedColumns[column].sortKeyFunc(item))
+                                
+                                # remove from hash tables
+                                hashTables["title"].remove(item.movieName)
+                                hashTables["quote"].remove(item.quote)
+                                hashTables["director"].remove(item.director)
+
+                                for i in range(len(dataList)): # remove from original data list
+                                    if item == dataList[i]: # remove items using custom __eq__() in DataItem
+                                        dataList.pop(i)
+                                        break
                         case "save": # save results to new csv (export)
                             print("Save to what file?")
                             filename = ""
@@ -157,18 +178,18 @@ def main(): # takes care of the user interface, calling other function when nece
                                 try: # for validating filename
                                     filename = input("> ")
                                     with open(filename, 'x', newline='', encoding='UTF-8') as f:
-                                        data = [titleRow, searchedItem.info()]
-                                        filewriter = writer(f)
+                                        data = [titleRow] # add title row
+                                        data.extend([x.info() for x in exactResult]) # and rest of data
+                                        fileWriter = writer(f)
                                         # Write all rows at once
-                                        filewriter.writerows(data)
-                                except FileExistsError:
+                                        fileWriter.writerows(data)
+                                except FileExistsError: # occurs if selected filename exists
                                     print(f"{filename} already exists.")
-                                except FileNotFoundError:
+                                except FileNotFoundError: # user entered ""
                                     print(f"Please enter a file name.")
                         case _: # don't recognize query, restart
                             print(f"I don't understand '{attempt}'.")
                             continue
-            # TODO error when ranging and deleting but only sometimes, is probably tree generation issue
             case "range": # search a b tree over a single or double bound range
                 if len(indexedColumns) == 0: # No columns indexed, back to beginning
                     print("No columns indexed, use \"index\".")
@@ -180,7 +201,7 @@ def main(): # takes care of the user interface, calling other function when nece
                     print("Column not indexed, use \"index\".")
                     continue
                 else:
-                    print("What mode? [<,2bound,>]")
+                    print("What mode? [<,2bound,>]") # select mode [less than, double bound, or greater than]
                     mode = input("> ")
                     try:
                         match mode:
@@ -207,7 +228,8 @@ def main(): # takes care of the user interface, calling other function when nece
                     if len(rangeResult) == 0: # Nothing found
                         print(f"No items found between {rangeAttempt} ({lb} - {ub}).")
                         continue
-                    print(f"Found {len(rangeResult)} items between {rangeAttempt} ({lb} - {ub}).")
+                    # ask the user what to do with results
+                    print(f"Found {len(rangeResult)} movie(s) between {rangeAttempt} ({lb} - {ub}).")
                     print("What to do with the results?")
                     print("[print, delete, save]")
                     saveAttempt = input("> ")
@@ -215,13 +237,22 @@ def main(): # takes care of the user interface, calling other function when nece
                         case "print": # print ranged items
                             for item in rangeResult:
                                 item.value.printInfo()
-                                print()
+                                print() # extra line to space things out
                         case "delete": # delete ranged items from all structures
                             for item in rangeResult:
-                                for column in indexedColumns.keys():
-                                    print(indexedColumns[column].remove(indexedColumns[column].sortKeyFunc(item.value)))
+                                for column in indexedColumns.keys(): # remove from b+ trees
+                                    # remove item from tree based on its key function, which is stored on tree creation
+                                    indexedColumns[column].remove(indexedColumns[column].sortKeyFunc(item.value))
+
+                                # remove from hash tables
                                 hashTables["title"].remove(item.value.movieName)
                                 hashTables["quote"].remove(item.value.quote)
+                                hashTables["director"].remove(item.value.director)
+
+                                for i in range(len(dataList)): # remove from original data list
+                                    if item.value == dataList[i]: # remove item using custom __eq__() in DataItem
+                                        dataList.pop(i)
+                                        break
                         case "save": # save range query to csv
                             print("Save to what file?")
                             filename = ""
@@ -232,9 +263,9 @@ def main(): # takes care of the user interface, calling other function when nece
                                     with open(filename, 'x', newline='', encoding='UTF-8') as f:
                                         data = [titleRow] # add title row
                                         data.extend([x.value.info() for x in rangeResult]) # and rest of data
-                                        filewriter = writer(f)
+                                        fileWriter = writer(f)
                                         # write all rows at once
-                                        filewriter.writerows(data)
+                                        fileWriter.writerows(data)
                                 except FileExistsError: # occurs if file exists
                                     print(f"{filename} already exists.")
                                 except FileNotFoundError: # only occurs if user enters ""
@@ -243,29 +274,21 @@ def main(): # takes care of the user interface, calling other function when nece
                             print(f"I don't understand '{attempt}'.")
                             continue
 
-            case "debug":
-                # Will not work if trees are large at all, very useless
-                if len(indexedColumns) == 0:
-                    print("No columns indexed.")
-                    continue
-                visualizer = TreeVisualizer()
-                for tree in indexedColumns:
-                    visualizer.add_to_stack(indexedColumns[tree])
-                visualizer.visualize()
+            # case "debug":
+            #     # Will not work if trees are large at all, very useless
+            #     if len(indexedColumns) == 0:
+            #         print("No columns indexed.")
+            #         continue
+            #     visualizer = TreeVisualizer()
+            #     for tree in indexedColumns:
+            #         visualizer.add_to_stack(indexedColumns[tree])
+            #     visualizer.visualize()
 
             case "quit": # attempt will be "quit" on next loop
                 continue
 
             case _: # don't recognize query, restart
                 print(f"I don't understand '{attempt}'.")
-
-
-    # tree = index_column(dataList[:10], "rating")
-    # print([x.value.movieName for x in tree.range_search(8.0, 8.0)])
-    # visualizer = TreeVisualizer()
-    # visualizer.add_to_stack(tree)
-    # visualizer.visualize()
-
 
 if __name__ == "__main__":
     main()
